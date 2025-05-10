@@ -12,8 +12,8 @@ A minimal, educational implementation of a GPT-style language model in a single 
 - [Quickstart](#usage)  
 - [Training](#training)  
 - [Generation](#generation)  
-- [Architecture](#architecture)  
-- [Class-by-Class Deep Dive](#detailed-example-n_embd4-n_head2)  
+- [High-Level Architecture](#architecture)  
+- [Class-by-Class Deep Dive](#Class-by-Class Deep Dive)  
 - [Acknowledgements](#acknowledgements)  
 
 
@@ -198,7 +198,7 @@ n_head: int        # number of attention heads
 n_embd: int        # embedding dimension
 dropout: float     # dropout probability
 bias: bool         # whether to include biases
-
+```
 ## Acknowledgements
 
 nanoGPT @https://github.com/karpathy/minGPT
