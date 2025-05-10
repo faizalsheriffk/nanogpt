@@ -12,7 +12,7 @@ A minimal, educational implementation of a GPT-style language model in a single 
 - [Quickstart](#usage)  
 - [Training](#training)  
 - [Generation](#generation)  
-- [High-Level Architecture](#architecture)  
+- [High-Level-Architecture](#high-level-architecture)  
 - [Class-by-Class Deep Dive](#Class-by-Class Deep Dive)  
 - [Acknowledgements](#acknowledgements)  
 
@@ -84,7 +84,7 @@ No relving thee post mose the wear
 
 ```
 
-## High-Level Architecture
+## High-Level-Architecture
 At its core, this single-file GPT implementation mirrors the standard GPT-2 design:
 
 1) Embeddings
