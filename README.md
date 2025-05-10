@@ -4,21 +4,18 @@
 
 A minimal, educational implementation of a GPT-style language model in a single file, inspired by Karpathy's NanoGPT which is inturn inspired by OpenAI's GPT-2 and HuggingFace's Transformers.  This repository is designed for going from novice understanding of LLMs to next iteration with the emphasis on basics, clarity, experimentation, and small-scale CPU based training.
 
----
 
 ## Table of Contents
 
 - [Overview](#overview)  
 - [Installation](#installation)  
-  - [Quickstart](#usage)  
-  - [Training](#training)  
-  - [Generation](#generation)  
+- [Quickstart](#usage)  
+- [Training](#training)  
+- [Generation](#generation)  
 - [Architecture](#architecture)  
-- [Detailed Example (n_embd=4, n_head=2)](#detailed-example-n_embd4-n_head2)  
-- [Contributing](#contributing)  
-- [License](#license)  
+- [Class-by-Class Deep Dive](#detailed-example-n_embd4-n_head2)  
+- [Acknowledgements](#acknowledgements)  
 
----
 
 ## Overview
 
@@ -40,7 +37,7 @@ Dependencies:
 -  `wandb` for optional logging <3
 -  `tqdm` for progress bars <3
 
-### quick start
+## Quick start
 
 The fastest way to get started is to train a character-level GPT on the works of Shakespeare. First, we download it as a single (1MB) file and turn it from raw text into one large stream of integers:
 
@@ -50,6 +47,7 @@ python3 data/shakespeare_char/prepare.py
 
 This creates a `train.bin` and `val.bin` in that data directory. Now it is time to train your GPT. The size of it very much depends on the computational resources of your system:
 
+## Training
 I have just a CPU. Great, don't worry about it. We can still quickly train a baby GPT with the settings provided in the [config/train_shakespeare_char.py](config/train_shakespeare_char.py) config file:
 
 ```sh
@@ -65,6 +63,7 @@ Peeking inside the config file, you’ll find settings tuned for CPU:
 - 2000 total iterations
 - Dropout set to 0.0 to ease regularization on such a small model:
 
+## Generation
 
 ```sh
 python3 sample.py --out_dir=out-shakespeare-char
@@ -89,12 +88,12 @@ No relving thee post mose the wear
 At its core, this single-file GPT implementation mirrors the standard GPT-2 design:
 
 1) Embeddings
-- Token embeddings (wte) turn vocabulary indices into vectors.
-- Position embeddings (wpe) inject information about each token’s position in the sequence.
+    - Token embeddings (wte) turn vocabulary indices into vectors.
+    - Position embeddings (wpe) inject information about each token’s position in the sequence.
 
 2) Transformer Blocks (Block) stacked n_layer times, each consisting of:
-- LayerNorm → Causal Self-Attention → residual add
-- LayerNorm → Feed-Forward (MLP) → residual add
+    - LayerNorm → Causal Self-Attention → residual add
+    - LayerNorm → Feed-Forward (MLP) → residual add
 
 3) Final LayerNorm and a Linear “head” (lm_head) that projects back to vocabulary logits.
 
@@ -121,35 +120,44 @@ y = (x - μ) / sqrt(σ² + ε) * γ + β
 
 ```
 
-## Class-by-Class Deep Dive
-
-### LayerNorm (`nn.Module`)
-
-Implements layer normalization with optional bias.
-
-- `__init__(ndim, bias)`  
-  - `self.weight = Parameter(torch.ones(ndim))` → learnable scale γ, initialized to 1.  
-  - `self.bias = Parameter(torch.zeros(ndim))` if `bias=True`, else `None` → learnable shift β.
-
-- `forward(input)`  
-  Applies layer normalization:
-  
-```
-x = c_fc(x)
-x = gelu(x)
-x = c_proj(x)
-x = dropout(x)
-```
+with `eps=1e-5` to avoid division by zero.
 
 
----
+### CausalSelfAttention (`nn.Module`)
 
-### Block (`nn.Module`)
-
-One Transformer block combining attention + MLP with residual connections.
+Multi-head self-attention with a causal mask to prevent peeking into the future.
 
 - `__init__(config)`
-- Instantiates `ln_1`, `attn`, `ln_2`, `mlp`.
+- Confirms `n_embd % n_head == 0`.
+- `c_attn`: Projects to Query, Key, Value (3 × embedding).
+- `c_proj`: Projects back from embedding.
+- Dropouts: `attn_dropout` (attention weights) and `resid_dropout` (output).
+- Detects FlashAttention (`scaled_dot_product_attention`), else registers manual causal mask.
+
+- `forward(x)`
+- Projects: `q, k, v = self.c_attn(x).split(n_embd, dim=2)`.
+- Reshapes for heads: `(batch, n_head, seq_len, head_dim)`.
+- Attention paths:
+  - **Flash path**: Use `scaled_dot_product_attention(q, k, v, is_causal=True)`.
+  - **Manual path**:
+    1. Scaled dot-product:
+       ```
+       scores = (q @ k^T) / sqrt(head_dim)
+       ```
+    2. Mask out future positions.
+    3. Softmax → dropout → multiply with v.
+- Reassemble heads and project: `y = resid_dropout(c_proj(y))`.
+
+
+### MLP (`nn.Module`)
+
+Position-wise feed-forward network.
+
+- `__init__(config)`
+- `c_fc`: Expand from `n_embd → 4 * n_embd`.
+- GELU activation.
+- `c_proj`: Project back `4 * n_embd → n_embd`.
+- `dropout` for regularization.
 
 - `forward(x)`
 
@@ -159,6 +167,7 @@ x = gelu(x)
 x = c_proj(x)
 x = dropout(x)
 ```
+
 
 
 ### Block (`nn.Module`)
@@ -190,7 +199,7 @@ n_embd: int        # embedding dimension
 dropout: float     # dropout probability
 bias: bool         # whether to include biases
 
-## acknowledgements
+## Acknowledgements
 
 nanoGPT @https://github.com/karpathy/minGPT
 3blue1brown https://www.youtube.com/@3blue1brown
