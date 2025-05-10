@@ -13,7 +13,7 @@ A minimal, educational implementation of a GPT-style language model in a single 
 - [Training](#training)  
 - [Generation](#generation)  
 - [High-Level-Architecture](#high-level-architecture)  
-- [Class-by-Class Deep Dive](#Class-by-Class Deep Dive)  
+- [Class-by-Class-Deep-Dive](#class-by-class-deep-dive)  
 - [Acknowledgements](#acknowledgements)  
 
 
@@ -201,5 +201,6 @@ bias: bool         # whether to include biases
 ```
 ## Acknowledgements
 
-nanoGPT @https://github.com/karpathy/minGPT
-3blue1brown https://www.youtube.com/@3blue1brown
+- nanoGPT @https://github.com/karpathy/minGPT
+
+- 3blue1brown https://www.youtube.com/@3blue1brown
